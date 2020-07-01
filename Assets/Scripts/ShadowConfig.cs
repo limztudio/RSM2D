@@ -24,8 +24,8 @@ public class ShadowConfig : MonoBehaviour{
             sampleTerm = new ComputeBuffer(sampleDensity, sizeof(float), ComputeBufferType.Default);
             float[] rawData = new float[sampleTerm.count];
             for(int i = 0, e = sampleTerm.count - 1; i <= e; ++i){
-                float ratio = (float)i * (float)e;
-                rawData[i] = Mathf.Cos(Mathf.PI * 2.0f * ratio) * 0.5f + 0.5f;
+                float ratio = (float)i / (float)e;
+                rawData[i] = Mathf.Cos(Mathf.PI * ratio) * 0.5f + 0.5f;
             }
             sampleTerm.SetData(rawData);
         }
