@@ -1,6 +1,7 @@
 ﻿Shader "RSM/Plane"{
     Properties{
         _MainTex("Texture", 2D) = "white" {}
+        _SampleMaxDist("SampleMaxDist", Float) = 0.03
     }
     SubShader{
         Tags {
@@ -38,11 +39,17 @@
                 fixed4 color : SV_Target0;
             };
 
-            float4x4 _TransformShadow;
-            sampler1D _ShadowMap0;
+            uniform int _SampleCount;
+            uniform StructuredBuffer<float> _SampleTerm : register(t1);
+
+            uniform float4x4 _TransformShadow;
+            uniform sampler1D _ShadowComponent0;
+            uniform sampler1D _ShadowComponent1;
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
+
+            float _SampleMaxDist;
 
             v2f vert(appdata input){
                 v2f output;
@@ -69,15 +76,44 @@
                 float2 shadowSpacePosXZ = input.shdXZW.xy / input.shdXZW.z;
                 shadowSpacePosXZ.x = shadowSpacePosXZ.x * 0.5f + 0.5f;
 
-                float4 shadowMap0 = tex1D(_ShadowMap0, shadowSpacePosXZ.x);
+                float4 shadowComponent0 = tex1D(_ShadowComponent0, shadowSpacePosXZ.x);
 
                 float curShadowDepth = saturate(shadowSpacePosXZ.y);
-                float cmpShadowDepth = shadowMap0.z;
+                float cmpShadowDepth = shadowComponent0.z;
+
+                float3 irradiance = float3(0.f, 0.f, 0.f);
+                for(int i = 0; i < _SampleCount; ++i){
+                    float rand = _SampleTerm[i];
+                    float nearbyShadowSpacePosX = shadowSpacePosXZ.x + (rand * _SampleMaxDist);
+
+                    float4 nearbyShadowComponent0 = tex1D(_ShadowComponent0, nearbyShadowSpacePosX);
+                    float4 nearbyShadowComponent1 = tex1D(_ShadowComponent1, nearbyShadowSpacePosX);
+
+                    float2 nearbyWorldSpacePosXZ = nearbyShadowComponent0.xy;
+                    float2 nearbyWorldSpaceNormalXZ = float2(nearbyShadowComponent0.w, nearbyShadowComponent1.w);
+                    float3 nearbyFlux = nearbyShadowComponent1.xyz;
+
+                    float2 diffPos = worldSpacePosXZ - nearbyWorldSpacePosXZ;
+                    float dividor = dot(diffPos, diffPos);
+                    dividor *= dividor;
+
+                    float3 radiance = max(0.f, dot(nearbyWorldSpaceNormalXZ, diffPos));
+                    radiance *= max(0.f, dot(worldSpaceNormalXZ, -diffPos));
+                    radiance /= dividor;
+                    radiance *= nearbyFlux;
+
+                    radiance *= rand;
+                    radiance *= rand;
+
+                    irradiance += radiance;
+                }
 
                 output.color = tex2D(_MainTex, texUV);
 
                 if(curShadowDepth < cmpShadowDepth)
-                    output.color.rgb *= abs(cmpShadowDepth - curShadowDepth);
+                    output.color.rgb *= 0.5f;
+
+                output.color.rgb = saturate(output.color.rgb + irradiance);
 
                 return output;
             }

@@ -437,10 +437,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24326df7fa4ece440b2e57486d84f8de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lightColor: {r: 1, g: 0, b: 0, a: 0}
   shadowComponent:
   - {fileID: 8400000, guid: 58d78a5aac2e90b419a1fe7eae1e3fe7, type: 2}
   - {fileID: 8400000, guid: b6d1e873278c8cb49a8ca18538ce0e95, type: 2}
   shadowCaster: {fileID: 4800000, guid: 0219fbb69baee3e469ba8ddead14a2f6, type: 3}
+  sampleDensity: 16
   lightTransform:
     e00: 0
     e01: 0
@@ -490,7 +492,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   shadowConfig: {fileID: 1209050533}
-  shadowMap0: {fileID: 8400000, guid: 58d78a5aac2e90b419a1fe7eae1e3fe7, type: 2}
+  shadowComponents:
+  - {fileID: 8400000, guid: 58d78a5aac2e90b419a1fe7eae1e3fe7, type: 2}
+  - {fileID: 8400000, guid: b6d1e873278c8cb49a8ca18538ce0e95, type: 2}
 --- !u!23 &1868624582
 MeshRenderer:
   m_ObjectHideFlags: 0

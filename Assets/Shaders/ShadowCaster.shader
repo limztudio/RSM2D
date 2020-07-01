@@ -38,6 +38,8 @@
                 float4 fluxRGB_wldNorZ : SV_Target1;
             };
 
+            uniform float4 _LightColor;
+
             sampler2D _MainTex;
             float4 _MainTex_ST;
 
@@ -71,6 +73,7 @@
 
                 // flux for directional light will be constant color(guess the directional light is uniform parallel light)
                 output.fluxRGB_wldNorZ.xyz = tex2D(_MainTex, texUV).rgb;
+                //output.fluxRGB_wldNorZ.xyz *= _LightColor.rgb;
 
                 return output;
             }
