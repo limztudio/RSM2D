@@ -67,11 +67,15 @@
 
                 float2 texUV = input.wldPosXY_texUV.zw;
 
-                float3 worldSpacePosXY = float3(input.wldPosXY_texUV.xy, 1.f);
-                float3 worldSpaceNormalXYZ = float3(0.f, 0.f, 1.f);
+                float2 worldSpacePosXY = input.wldPosXY_texUV.xy;
 
                 float2 shadowSpacePosXZ = input.shdXZW.xy / input.shdXZW.z;
                 shadowSpacePosXZ.x = shadowSpacePosXZ.x * 0.5f + 0.5f;
+
+                float4 shadowComponent0 = tex1D(_ShadowComponent0, shadowSpacePosXZ.x);
+
+                float curShadowDepth = saturate(shadowSpacePosXZ.y);
+                float cmpShadowDepth = shadowComponent0.z;
 
                 float3 irradiance = float3(0.f, 0.f, 0.f);
                 for(int i = 0; i < _SampleCount; ++i){
@@ -81,16 +85,16 @@
                     float4 nearbyShadowComponent0 = tex1D(_ShadowComponent0, nearbyShadowSpacePosX);
                     float4 nearbyShadowComponent1 = tex1D(_ShadowComponent1, nearbyShadowSpacePosX);
 
-                    float3 nearbyWorldSpacePosXY = float3(nearbyShadowComponent0.xy, 2.f);
-                    float3 nearbyWorldSpaceNormalXY = float3(nearbyShadowComponent0.w, nearbyShadowComponent1.w, 0.f);
+                    float2 nearbyWorldSpacePosXY = nearbyShadowComponent0.xy;
+                    float2 nearbyWorldSpaceNormalXY = float2(nearbyShadowComponent0.w, nearbyShadowComponent1.w);
                     float3 nearbyFlux = nearbyShadowComponent1.xyz;
 
                     float2 diffPos = worldSpacePosXY - nearbyWorldSpacePosXY;
+                    //diffPos = normalize(diffPos);
                     float dividor = dot(diffPos, diffPos);
                     dividor *= dividor;
 
                     float3 radiance = max(0.f, dot(nearbyWorldSpaceNormalXY, diffPos));
-                    //radiance *= max(0.f, dot(worldSpaceNormalXYZ, -diffPos));
                     radiance /= dividor;
                     radiance *= nearbyFlux;
 
@@ -102,15 +106,8 @@
 
                 output.color = tex2D(_MainTex, texUV);
 
-                {
-                    float4 shadowComponent0 = tex1D(_ShadowComponent0, shadowSpacePosXZ.x);
-
-                    float curShadowDepth = saturate(shadowSpacePosXZ.y);
-                    float cmpShadowDepth = shadowComponent0.z;
-
-                    if(curShadowDepth < cmpShadowDepth)
-                        output.color.rgb *= 0.5f;
-                }
+                if(curShadowDepth < cmpShadowDepth)
+                    output.color.rgb *= 0.5f;
 
                 output.color.rgb = saturate(output.color.rgb + irradiance);
 
