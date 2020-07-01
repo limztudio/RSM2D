@@ -23,15 +23,18 @@
             struct appdata{
                 float4 vertex : POSITION;
 
+                float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
             };
             struct v2f{
                 float4 vertex : SV_POSITION;
 
-                float2 uv : TEXCOORD0;
-                float4 pos : TEXCOORD1;
+                float4 wldPosXZ_wldNorXZ : TEXCOORD0;
+                float3 shdXZW : TEXCOORD1;
+                float2 texUV : TEXCOORD2;
+                
             };
-            struct f2s{
+            struct f2o{
                 fixed4 color : SV_Target0;
             };
 
@@ -45,25 +48,33 @@
                 v2f output;
 
                 output.vertex = UnityObjectToClipPos(input.vertex);
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
 
-                output.pos = mul(_TransformShadow, input.vertex);
+                output.wldPosXZ_wldNorXZ.xy = mul(unity_ObjectToWorld, input.vertex).xz;
+                output.wldPosXZ_wldNorXZ.zw = normalize(mul((float3x3)unity_ObjectToWorld, input.normal).xz);
+
+                output.shdXZW.xyz = mul(_TransformShadow, input.vertex).xzw;
+
+                output.texUV.xy = TRANSFORM_TEX(input.uv, _MainTex);
 
                 return output;
             }
-            f2s frag(v2f input){
-                f2s output;
+            f2o frag(v2f input){
+                f2o output;
 
-                float3 shadowSpacePos = input.pos.xyz / input.pos.w;
+                float2 texUV = input.texUV;
 
-                float shadowU = shadowSpacePos.x * 0.5f + 0.5f;
+                float2 worldSpacePosXZ = input.wldPosXZ_wldNorXZ.xy;
+                float2 worldSpaceNormalXZ = input.wldPosXZ_wldNorXZ.zw;
 
-                float4 shadowMap0 = tex1D(_ShadowMap0, shadowU);
+                float2 shadowSpacePosXZ = input.shdXZW.xy / input.shdXZW.z;
+                shadowSpacePosXZ.x = shadowSpacePosXZ.x * 0.5f + 0.5f;
 
-                float curShadowDepth = saturate(shadowSpacePos.z);
+                float4 shadowMap0 = tex1D(_ShadowMap0, shadowSpacePosXZ.x);
+
+                float curShadowDepth = saturate(shadowSpacePosXZ.y);
                 float cmpShadowDepth = shadowMap0.z;
 
-                output.color = tex2D(_MainTex, input.uv);
+                output.color = tex2D(_MainTex, texUV);
 
                 if(curShadowDepth < cmpShadowDepth)
                     output.color.rgb *= abs(cmpShadowDepth - curShadowDepth);

@@ -30,7 +30,7 @@
 
                 float2 uv : TEXCOORD0;
             };
-            struct f2s{
+            struct f2o{
                 fixed4 color : SV_Target0;
             };
 
@@ -45,8 +45,8 @@
 
                 return output;
             }
-            f2s frag(v2f input){
-                f2s output;
+            f2o frag(v2f input){
+                f2o output;
 
                 output.color = tex2D(_MainTex, input.uv);
 
