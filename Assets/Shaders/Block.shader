@@ -34,7 +34,9 @@
                 fixed4 color : SV_Target0;
             };
 
-            sampler2D _MainTex;
+            SamplerState sampler_point_repeat;
+
+            Texture2D _MainTex;
             float4 _MainTex_ST;
 
             v2f vert(appdata input){
@@ -48,7 +50,7 @@
             f2o frag(v2f input){
                 f2o output;
 
-                output.color = tex2D(_MainTex, input.uv);
+                output.color = UNITY_SAMPLE_TEX2D_SAMPLER(_MainTex, _point_repeat, input.uv);
 
                 return output;
             }
